@@ -1,0 +1,115 @@
+# Commercial real-estate alerts - Haifa & Krayot
+# ------------------------------------------------
+# Edit this file to change WHAT the agent looks for and WHERE.
+# Secrets (Telegram token, email password...) never go here - put them in .env
+# (local) or in GitHub repository secrets (cloud). See README.md.
+
+search:
+  deal: rent                 # rent | sale | any
+
+  # Size in square meters. Listings up to `size_tolerance_pct` outside the range
+  # are still sent, marked as "close to range" (≈). Set to 0 to be strict.
+  min_sqm: 200
+  max_sqm: 300
+  size_tolerance_pct: 10
+  include_unknown_size: false   # true = also send listings that don't state a size
+
+  # Monthly rent in NIS. Leave empty (null) for no limit.
+  min_price: null
+  max_price: null
+  include_unknown_price: true   # commercial listings often say "price on request"
+
+  # A rent listing never costs this much per month - anything above is a sale ad.
+  sale_price_threshold: 150000
+
+  # Property types to keep. Remove a line to stop getting that type.
+  #   shop       = חנות / שטח מסחרי / מסעדה
+  #   warehouse  = מחסן / לוגיסטיקה
+  #   building   = מבנה / בניין להשכרה
+  #   industrial = מבנה תעשייה / מפעל / סדנה / מוסך
+  #   hall       = אולם / אולם תצוגה
+  #   office     = משרד / משרדים / קליניקה
+  property_types: [shop, warehouse, building, industrial, hall, office]
+  include_unknown_type: true
+
+  # Cities to keep. Each city lists the spellings that count as that city.
+  # (Kiryat Haim / Kiryat Shmuel / Kiryat Eliezer are Haifa neighborhoods.)
+  cities:
+    חיפה: [חיפה, haifa, קרית חיים, קרית שמואל, קרית אליעזר, מפרץ חיפה, מת"ם, צ'ק פוסט]
+    קרית ביאליק: [קרית ביאליק, kiryat bialik, קריית ביאליק]
+    קרית מוצקין: [קרית מוצקין, kiryat motzkin, קריית מוצקין]
+    קרית אתא: [קרית אתא, kiryat ata, kiryat atta, קריית אתא]
+    קרית ים: [קרית ים, kiryat yam, קריית ים]
+    # Uncomment to widen the area:
+    # נשר: [נשר, nesher]
+    # טירת כרמל: [טירת כרמל, tirat carmel]
+
+  # Skip listings whose text contains any of these words ("wanted" ads etc.).
+  exclude_keywords: [דרוש, דרושה, מחפש, מחפשת, מחפשים, שותף לעסק, שותפה לעסק]
+
+  # Alert again when a listing we already sent drops in price by at least this %.
+  price_drop_pct: 3
+
+# Where to look. Each URL is a search results page.
+# The easiest way to tune a URL: open the site, set the filters you want,
+# and paste the address from the browser bar here.
+sources:
+  - name: yad2
+    label: יד2
+    type: yad2
+    enabled: true
+    max_pages: 3
+    urls:
+      # city codes: 4000 Haifa, 9500 Kiryat Bialik, 8200 Kiryat Motzkin, 6800 Kiryat Ata, 9600 Kiryat Yam
+      - https://www.yad2.co.il/realestate/commercial?city=4000&minSquaremeter=180&maxSquaremeter=330
+      - https://www.yad2.co.il/realestate/commercial?city=9500&minSquaremeter=180&maxSquaremeter=330
+      - https://www.yad2.co.il/realestate/commercial?city=8200&minSquaremeter=180&maxSquaremeter=330
+      - https://www.yad2.co.il/realestate/commercial?city=6800&minSquaremeter=180&maxSquaremeter=330
+      - https://www.yad2.co.il/realestate/commercial?city=9600&minSquaremeter=180&maxSquaremeter=330
+
+  - name: madlan
+    label: מדלן
+    type: madlan
+    enabled: true
+    max_pages: 3
+    urls:
+      - https://www.madlan.co.il/commercial/for-rent/חיפה-ישראל
+      - https://www.madlan.co.il/commercial/for-rent/קרית-ביאליק-ישראל
+      - https://www.madlan.co.il/commercial/for-rent/קרית-מוצקין-ישראל
+      - https://www.madlan.co.il/commercial/for-rent/קרית-אתא-ישראל
+      - https://www.madlan.co.il/commercial/for-rent/קרית-ים-ישראל
+
+  # Any other listings site works with type "generic": give it the search URL
+  # and a pattern that matches the links of single listings (the part in
+  # parentheses is the listing id). Paste your search URLs and set enabled: true.
+  - name: komo
+    label: קומו
+    type: generic
+    enabled: false
+    link_pattern: 'komo\.co\.il/code/nadlan/details/?\?.*modaaNum=(\d+)'
+    urls: []
+
+  - name: homeless
+    label: הומלס
+    type: generic
+    enabled: false
+    link_pattern: 'homeless\.co\.il/.*viewad[,_](\d+)'
+    urls: []
+
+browser:
+  engine: chromium        # chromium | camoufox (stealthier, `pip install camoufox[geoip] && python -m camoufox fetch`)
+  channel: ""             # "chrome" = use the Google Chrome installed on this computer
+  headless: true          # false = show the browser window (useful to solve a captcha once)
+  profile_dir: .browser-profile
+  delay_seconds: [4, 9]   # random pause between page loads, be polite
+  timeout_seconds: 60
+  challenge_wait_seconds: 25          # headless: how long to wait for an anti-bot check to clear
+  headed_challenge_wait_seconds: 180  # visible browser: time for you to solve a captcha
+
+notify:
+  language: he             # he | en
+  notify_when_empty: false # true = also send "nothing new" after every scan
+  telegram_individual_limit: 10  # more new listings than this -> one compact digest instead
+
+state_file: state/seen.json
+reports_dir: reports

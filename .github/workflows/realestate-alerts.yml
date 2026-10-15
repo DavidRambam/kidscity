@@ -1,0 +1,70 @@
+name: Real-estate alerts (Haifa & Krayot)
+
+on:
+  schedule:
+    # 05:00 and 15:00 UTC = 08:00 and 18:00 Israel summer time (07:00 / 17:00 in winter).
+    # GitHub only runs schedules from the default branch and may start them a bit late.
+    - cron: "0 5,15 * * *"
+  workflow_dispatch: # "Run workflow" button in the Actions tab
+
+concurrency:
+  group: realestate-alerts
+  cancel-in-progress: false
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    defaults:
+      run:
+        working-directory: realestate-alerts
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: realestate-alerts/requirements.txt
+
+      - name: Install
+        run: |
+          pip install -r requirements.txt
+          python -m playwright install --with-deps chromium
+
+      # The list of already-sent listings lives in the Actions cache between runs.
+      - name: Restore memory of sent listings
+        uses: actions/cache/restore@v4
+        with:
+          path: realestate-alerts/state
+          key: realestate-state-${{ github.run_id }}
+          restore-keys: realestate-state-
+
+      - name: Scan and notify
+        run: python -m alerts run
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
+          EMAIL_TO: ${{ secrets.EMAIL_TO }}
+          WHATSAPP_PHONE: ${{ secrets.WHATSAPP_PHONE }}
+          CALLMEBOT_APIKEY: ${{ secrets.CALLMEBOT_APIKEY }}
+
+      - name: Save memory of sent listings
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: realestate-alerts/state
+          key: realestate-state-${{ github.run_id }}
+
+      - name: Keep the report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: report-${{ github.run_id }}
+          path: |
+            realestate-alerts/reports/latest.html
+            realestate-alerts/logs/
+          retention-days: 14
+          if-no-files-found: ignore
