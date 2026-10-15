@@ -1,8 +1,9 @@
-"""Command line: `python -m alerts [run|test-notify] [options]`."""
+"""Command line: `python -m alerts [run|setup|test-notify] [options]`."""
 from __future__ import annotations
 
 import argparse
 import logging
+import os
 import sys
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
@@ -11,6 +12,7 @@ from . import notify
 from .browser import BrowserSession
 from .config import ConfigError, load_config, load_dotenv
 from .runner import run_scan
+from .setup_env import interactive
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -32,8 +34,9 @@ def _setup_logging(log_dir: Path, verbose: bool) -> None:
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="python -m alerts",
                                      description="Commercial real-estate alerts for Haifa & Krayot")
-    parser.add_argument("command", nargs="?", default="run", choices=["run", "test-notify"],
-                        help="run = scan and notify (default); test-notify = send a test message")
+    parser.add_argument("command", nargs="?", default="run", choices=["run", "test-notify", "setup"],
+                        help="run = scan and notify (default); setup = enter email/WhatsApp details; "
+                             "test-notify = send a test message")
     parser.add_argument("--config", default=str(ROOT / "config.yaml"))
     parser.add_argument("--dry-run", action="store_true", help="scan and write the report, but send/save nothing")
     parser.add_argument("--headed", action="store_true", help="show the browser window (solve a captcha once)")
@@ -56,6 +59,14 @@ def main(argv: list[str] | None = None) -> int:
         return 2
     _setup_logging(cfg.base_dir / "logs", args.verbose)
     log = logging.getLogger("alerts")
+
+    if args.command == "setup":
+        updates = interactive(ROOT / ".env")
+        os.environ.update({k: v for k, v in updates.items() if v})
+        if input("\nSend a test message now? [Y/n]: ").strip().lower() in ("", "y", "yes", "כ", "כן"):
+            args.command = "test-notify"
+        else:
+            return 0
 
     if args.command == "test-notify":
         active = notify.channels()

@@ -1,4 +1,4 @@
-# Commercial real-estate alerts - Haifa & Krayot
+# Commercial real-estate alerts - Haifa, Krayot, Nesher & Tirat Carmel
 # ------------------------------------------------
 # Edit this file to change WHAT the agent looks for and WHERE.
 # Secrets (Telegram token, email password...) never go here - put them in .env
@@ -9,9 +9,9 @@ search:
 
   # Size in square meters. Listings up to `size_tolerance_pct` outside the range
   # are still sent, marked as "close to range" (≈). Set to 0 to be strict.
-  min_sqm: 200
-  max_sqm: 300
-  size_tolerance_pct: 10
+  min_sqm: 150
+  max_sqm: 250
+  size_tolerance_pct: 10        # 10% -> listings of 135-275 m² are sent too
   include_unknown_size: false   # true = also send listings that don't state a size
 
   # Monthly rent in NIS. Leave empty (null) for no limit.
@@ -28,8 +28,8 @@ search:
   #   building   = מבנה / בניין להשכרה
   #   industrial = מבנה תעשייה / מפעל / סדנה / מוסך
   #   hall       = אולם / אולם תצוגה
-  #   office     = משרד / משרדים / קליניקה
-  property_types: [shop, warehouse, building, industrial, hall, office]
+  #   office     = משרד / משרדים / קליניקה   (add "office" to the list to get offices too)
+  property_types: [shop, warehouse, building, industrial, hall]
   include_unknown_type: true
 
   # Cities to keep. Each city lists the spellings that count as that city.
@@ -40,9 +40,8 @@ search:
     קרית מוצקין: [קרית מוצקין, kiryat motzkin, קריית מוצקין]
     קרית אתא: [קרית אתא, kiryat ata, kiryat atta, קריית אתא]
     קרית ים: [קרית ים, kiryat yam, קריית ים]
-    # Uncomment to widen the area:
-    # נשר: [נשר, nesher]
-    # טירת כרמל: [טירת כרמל, tirat carmel]
+    נשר: [נשר, nesher]
+    טירת כרמל: [טירת כרמל, tirat carmel]
 
   # Skip listings whose text contains any of these words ("wanted" ads etc.).
   exclude_keywords: [דרוש, דרושה, מחפש, מחפשת, מחפשים, שותף לעסק, שותפה לעסק]
@@ -60,12 +59,15 @@ sources:
     enabled: true
     max_pages: 3
     urls:
-      # city codes: 4000 Haifa, 9500 Kiryat Bialik, 8200 Kiryat Motzkin, 6800 Kiryat Ata, 9600 Kiryat Yam
-      - https://www.yad2.co.il/realestate/commercial?city=4000&minSquaremeter=180&maxSquaremeter=330
-      - https://www.yad2.co.il/realestate/commercial?city=9500&minSquaremeter=180&maxSquaremeter=330
-      - https://www.yad2.co.il/realestate/commercial?city=8200&minSquaremeter=180&maxSquaremeter=330
-      - https://www.yad2.co.il/realestate/commercial?city=6800&minSquaremeter=180&maxSquaremeter=330
-      - https://www.yad2.co.il/realestate/commercial?city=9600&minSquaremeter=180&maxSquaremeter=330
+      # city codes: 4000 Haifa, 9500 Kiryat Bialik, 8200 Kiryat Motzkin, 6800 Kiryat Ata,
+      #             9600 Kiryat Yam, 2500 Nesher, 2100 Tirat Carmel
+      - https://www.yad2.co.il/realestate/commercial?city=4000&minSquaremeter=135&maxSquaremeter=275
+      - https://www.yad2.co.il/realestate/commercial?city=9500&minSquaremeter=135&maxSquaremeter=275
+      - https://www.yad2.co.il/realestate/commercial?city=8200&minSquaremeter=135&maxSquaremeter=275
+      - https://www.yad2.co.il/realestate/commercial?city=6800&minSquaremeter=135&maxSquaremeter=275
+      - https://www.yad2.co.il/realestate/commercial?city=9600&minSquaremeter=135&maxSquaremeter=275
+      - https://www.yad2.co.il/realestate/commercial?city=2500&minSquaremeter=135&maxSquaremeter=275
+      - https://www.yad2.co.il/realestate/commercial?city=2100&minSquaremeter=135&maxSquaremeter=275
 
   - name: madlan
     label: מדלן
@@ -78,6 +80,8 @@ sources:
       - https://www.madlan.co.il/commercial/for-rent/קרית-מוצקין-ישראל
       - https://www.madlan.co.il/commercial/for-rent/קרית-אתא-ישראל
       - https://www.madlan.co.il/commercial/for-rent/קרית-ים-ישראל
+      - https://www.madlan.co.il/commercial/for-rent/נשר-ישראל
+      - https://www.madlan.co.il/commercial/for-rent/טירת-כרמל-ישראל
 
   # Any other listings site works with type "generic": give it the search URL
   # and a pattern that matches the links of single listings (the part in
